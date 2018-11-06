@@ -1,0 +1,157 @@
+Functional`r "\U2003\U2003\U2003\U2003\U2003"`programming in R
+========================================================
+author: Lucas Nell < lucas@lucasnell.com >
+date: 7 Oct 2018
+autosize: true
+font-family: Helvetica Neue
+css: custom.css
+
+
+<small>
+Presentation available at `lucasnell.com/functionalr`
+</small>
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE)
+```
+
+
+Why use functions?
+========================================================
+
+Two main advantages over copy and paste:
+
+1. Create fewer errors
+2. Improve readability of code
+
+
+
+Functions in R
+========================================================
+
+```{r fxn_intro1}
+add <- function(x, y) x + y
+add(4:7, 5:8)
+```
+
+
+```{r cprop_fxn}
+cprop <- function(x) {
+  csum <- cumsum(x)
+  csum / sum(x)
+}
+cprop(1:4)
+```
+
+
+The `return` statement
+========================================================
+
+```{r cprop_return}
+cprop <- function(x, sum_only) {
+  csum <- cumsum(x)
+  if (sum_only) return(csum)
+  csum / sum(x)
+}
+cprop(1:4, TRUE)
+```
+
+
+Named and default parameters
+========================================================
+
+```{r cprop_defaultnamedpars}
+cprop <- function(x, sum_only = FALSE) {
+  csum <- cumsum(x)
+  if (sum_only) return(csum)
+  csum / sum(x)
+}
+```
+
+### All these ways work:
+
+```{r crop_dnp_run, eval=FALSE}
+cprop(1:4)
+cprop(x = 1:4)
+cprop(1:4, TRUE)  # <-- order matters here!
+cprop(sum_only = TRUE, x = 1:4)
+```
+
+
+
+Lazy evaluation
+========================================================
+
+```{r foo_lazyeval}
+foo <- function(x, y) x
+```
+
+
+```{r foo_lazyeval2, error=TRUE}
+foo(stop("ERROR"), 1:4)
+foo(1:4, stop("ERROR"))
+```
+
+
+Function "scope"
+========================================================
+class: smaller
+
+```{r foo_scope, error=TRUE}
+foo <- function(x, y = x) x + y
+foo(1)
+foo(x = 1, y = x)
+```
+
+```{r foo_scope2}
+y <- 0
+foo <- function(x) {
+  y <- 10
+  x
+}
+foo(1 + y)
+```
+
+
+Flexibility of lists
+========================================================
+class: smaller
+
+```{r lists_are_great, error=TRUE}
+x <- numeric(2)
+x[[1]] <- lm(mpg ~ cyl, mtcars)
+```
+
+```{r lists_are_great2}
+x <- as.list(numeric(2))
+x[[1]] <- lm(mpg ~ cyl, mtcars)
+x
+```
+
+
+Consider the following example
+========================================================
+
+```{r show_errors, eval=FALSE}
+aov_mpg <- aov(mpg ~ factor(cyl), data = mtcars)
+summary(aov_mpg)
+aov_disp <- aov(disp ~ factor(cyll), data = mtcars)
+summary(aov_disp)
+aov_hp <- aov(hp ~ factor(cyl), data = mrcars)
+summry(aov_hpp)
+aov_wt <- aov(wt ~ factor(cyl), datas = mtcars)
+summary(aov_wt)
+```
+
+
+
+
+
+
+More information
+========================================================
+
+* T Mailund (2017). *Functional Programming in R*. doi: 10.1007/978-1-4842-2746-6_1
+  * Free through UW
+* [Functional Programming in R with purrr](
+https://towardsdatascience.com/functional-programming-in-r-with-purrr-469e597d0229)
