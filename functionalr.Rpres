@@ -8,7 +8,7 @@ css: custom.css
 
 
 <small>
-Presentation available at `lucasnell.com/functionalr`
+Presentation available at `lucasnell.com/posts/functionalr`
 </small>
 
 ```{r, include = FALSE}
@@ -26,90 +26,100 @@ Two main advantages over copy and paste:
 
 
 
-Functions in R
+Consider the following example
 ========================================================
 
-```{r fxn_intro1}
-add <- function(x, y) x + y
-add(4:7, 5:8)
+Small errors are easy to make and can be annoying to find.
+
+```{r show_errors, error=TRUE}
+lm_mpg <- lm(mpg ~ factor(cyll), mtcars)
+```
+```{r show_errors2, error=TRUE}
+lm_hp <- lm(hp ~ factor(cyl), mrcars)
+```
+```{r show_errors3, error=TRUE}
+lm_disp <- lm(mpg ~ factor(cyl), mtcars)
 ```
 
 
-```{r cprop_fxn}
-cprop <- function(x) {
-  csum <- cumsum(x)
-  csum / sum(x)
-}
-cprop(1:4)
-```
-
-
-The `return` statement
-========================================================
-
-```{r cprop_return}
-cprop <- function(x, sum_only) {
-  csum <- cumsum(x)
-  if (sum_only) return(csum)
-  csum / sum(x)
-}
-cprop(1:4, TRUE)
-```
-
-
-Named and default parameters
-========================================================
-
-```{r cprop_defaultnamedpars}
-cprop <- function(x, sum_only = FALSE) {
-  csum <- cumsum(x)
-  if (sum_only) return(csum)
-  csum / sum(x)
-}
-```
-
-### All these ways work:
-
-```{r crop_dnp_run, eval=FALSE}
-cprop(1:4)
-cprop(x = 1:4)
-cprop(1:4, TRUE)  # <-- order matters here!
-cprop(sum_only = TRUE, x = 1:4)
-```
-
-
-
-Lazy evaluation
-========================================================
-
-```{r foo_lazyeval}
-foo <- function(x, y) x
-```
-
-
-```{r foo_lazyeval2, error=TRUE}
-foo(stop("ERROR"), 1:4)
-foo(1:4, stop("ERROR"))
-```
-
-
-Function "scope"
+Consider the following example (2/3)
 ========================================================
 class: smaller
+title: false
 
-```{r foo_scope, error=TRUE}
-foo <- function(x, y = x) x + y
-foo(1)
-foo(x = 1, y = x)
+The problem is even worse when you have lots of copying.
+
+```{r show_many_models, eval=FALSE}
+lm(mpg ~ cyl + disp + hp + drat, mtcars)
+lm(mpg ~ cyl + disp + hp + wt, mtcars)
+lm(mpg ~ cyl + disp + drat + wt, mtcars)
+lm(mpg ~ cyl + hp + drat + wt, mtcars)
+lm(mpg ~ disp + hp + drat + wt, mtcars)
+lm(disp ~ mpg + cyl + hp + drat, mtcars)
+lm(disp ~ mpg + cyl + hp + wt, mtcars)
+lm(disp ~ mpg + cyl + drat + wt, mtcars)
+lm(disp ~ mpg + hp + drat + wt, mtcars)
+lm(disp ~ cyl + hp + drat + wt, mtcars)
+lm(hp ~ mpg + cyl + disp + drat, mtcars)
+lm(hp ~ mpg + cyl + disp + wt, mtcars)
+lm(hp ~ mpg + cyl + drat + wt, mtcars)
+lm(hp ~ mpg + disp + drat + wt, mtcars)
+lm(hp ~ cyl + disp + drat + wt, mtcars)
 ```
 
-```{r foo_scope2}
-y <- 0
-foo <- function(x) {
-  y <- 10
-  x
+
+Consider the following example (3/3)
+========================================================
+title: false
+
+
+```{r fixed_errors_fxn, echo=FALSE}
+cyl_model <- function(y) {
+  form <- as.formula(paste(y, "~ factor(cyl)"))
+  mod <- lm(form, mtcars)
+  mod$call$formula <- as.formula(mod$terms)
+  return(mod)
 }
-foo(1 + y)
+```
+
+```{r non_fixed_errors, eval = FALSE}
+lm_mpg <- lm(mpg ~ factor(cyl), mtcars)
+lm_disp <- lm(disp ~ factor(cyl), mtcars)
+lm_hp <- lm(hp ~ factor(cyl), mtcars)
+lm_drat <- lm(drat ~ factor(cyl), mtcars)
+lm_wt <- lm(wt ~ factor(cyl), mtcars)
+lm_qsec <- lm(qsec ~ factor(cyl), mtcars)
+lm_vs <- lm(vs ~ factor(cyl), mtcars)
+lm_am <- lm(am ~ factor(cyl), mtcars)
+lm_gear <- lm(gear ~ factor(cyl), mtcars)
+lm_carb <- lm(carb ~ factor(cyl), mtcars)
+```
+
+versus
+
+```{r fixed_errors}
+y_pars <- c("mpg", "disp", "hp", "drat",
+            "wt", "qsec", "vs", "am",
+            "gear", "carb")
+all_lm <- lapply(y_pars, cyl_model)
+```
+
+
+
+
+
+
+Basics of functions in R
+========================================================
+
+```{r fxn_intro}
+subtract <- function(x, y = 1) {
+  z <- x - y
+  return(z)
+}
+subtract(1:3, 4:6)
+subtract(1:3)
+subtract(y = 1:3, x = 4:6)
 ```
 
 
@@ -119,28 +129,277 @@ class: smaller
 
 ```{r lists_are_great, error=TRUE}
 x <- numeric(2)
-x[[1]] <- lm(mpg ~ cyl, mtcars)
+x[[1]] <- matrix(0, 0, 0)
 ```
 
 ```{r lists_are_great2}
-x <- as.list(numeric(2))
-x[[1]] <- lm(mpg ~ cyl, mtcars)
+x <- as.list(numeric(3))
+x[[1]] <- matrix(0, 0, 0)
+x[[2]] <- data.frame()
+x[[3]] <- runif(3)
 x
 ```
 
 
-Consider the following example
+The `apply` functions
 ========================================================
 
-```{r show_errors, eval=FALSE}
-aov_mpg <- aov(mpg ~ factor(cyl), data = mtcars)
-summary(aov_mpg)
-aov_disp <- aov(disp ~ factor(cyll), data = mtcars)
-summary(aov_disp)
-aov_hp <- aov(hp ~ factor(cyl), data = mrcars)
-summry(aov_hpp)
-aov_wt <- aov(wt ~ factor(cyl), datas = mtcars)
-summary(aov_wt)
+* Allows you to apply a function to multiple inputs.
+* `lapply` outputs a list, `sapply` coerces to an array.
+
+```{r lapply_ex}
+lapply(4:5, function(i) 1 + i)
+sapply(4:5, function(i) 1 + i)
+```
+
+
+
+For loops
+========================================================
+class: smaller
+
+* Especially useful when one iteration's result depends on the previous iteration.
+* Changes existing object(s).
+
+```{r for_loops, echo = FALSE}
+set.seed(3)
+par(mar = c(4, 4, 1, 1))
+```
+```{r for_loops2, fig.width=8, fig.height=4}
+x <- numeric(100)
+x[1] <- 10
+for (t in 2:length(x)) {
+  x[t] <- x[t-1] + rnorm(1)
+}
+plot(x, type = "l", lwd = 2)
+```
+
+
+
+General process to "functionalize" code
+========================================================
+
+1. Break problem into smaller sub-problems.
+2. For each sub-problem, write a function.
+3. For writing each function...
+  1. The main function code will include the commonalities between all situations.
+  2. Features that aren't common should be input to the function as arguments.
+
+
+
+
+Example #1: Cleaning weird files
+========================================================
+class: smaller
+
+```{r n_slides_ex1, echo = FALSE}
+n_slides <- 4
+```
+
+
+Suppose we have a folder full of CSV files like this:
+
+
+
+```{r weirddata_data, echo = FALSE}
+files <- c("## Data provided by X
+
+Ozone,Solar.R,Wind,Temp,Month,Day
+41,190,7.4,67,5,1
+NA,NA,14.3,56,5,5
+--- instrument error
+28,NA,14.9,66,5,6
+23,299,8.6,65,5,7
+--- instrument error
+NA,194,8.6,69,5,10
+
+## Year observed: 1990",
+"## Data provided by Y
+
+Ozone,Solar.R,Wind,Temp,Month,Day
+7,NA,6.9,74,5,11
+--- instrument error
+11,290,9.2,66,5,13
+14,274,10.9,68,5,14
+18,65,13.2,58,5,15
+--- instrument error
+--- instrument error
+6,78,18.4,57,5,18
+30,322,11.5,68,5,19
+11,44,9.7,62,5,20
+
+## Year observed: 1991
+")
+cat(files[1])
+```
+
+
+Cleaning weird files (2/`r n_slides`)
+========================================================
+class: smaller
+
+### Problems:
+
+1. Remove unnecessary lines from each file.
+2. Create a single data frame from multiple cleaned files.
+
+### Input information:
+
+1. Vector of file names (`file_names`)
+
+```{r weirddata_info}
+file_names <- c("file1.csv", "file2.csv")
+```
+
+
+Cleaning weird files (3/`r n_slides`)
+========================================================
+class: smaller
+
+Clean a single CSV file to a string:
+
+```{r weirddata3, eval=FALSE}
+clean_str <- function(file_name) {
+  lines <- readLines(file_name)
+  lines <- lines[!grepl("^\\#\\#|^--", lines) &
+                   lines != ""]
+  cleaned_str <- paste(lines, collapse = "\n")
+  return(cleaned_str)
+}
+```
+
+Cleaning weird files (4/`r n_slides`)
+========================================================
+class: smaller
+
+Clean multiple files then combine them into a single data frame:
+
+```{r weirddata4, eval=FALSE}
+clean_df <- function(file_names) {
+  cleaned_strs <- lapply(file_names, clean_str)
+  data_frames <- lapply(cleaned_strs, readr::read_csv)
+  combined_df <- dplyr::bind_rows(data_frames)
+  return(as.data.frame(combined_df))
+}
+head(clean_df(file_names))
+```
+```{r weirddata5, eval=TRUE, echo=FALSE}
+df_list <- lapply(strsplit(files, "\n"),
+       function(lines) {
+         lines <- lines[!grepl("^\\#\\#|^--", lines) &
+                 lines != ""]
+         cleaned_str <- paste(lines, collapse = "\n")
+         readr::read_csv(cleaned_str)
+       })
+head(as.data.frame(dplyr::bind_rows(df_list)))
+```
+
+
+Example #2: Fitting lots of models
+========================================================
+class: smaller
+
+```{r n_slides_ex2, echo = FALSE}
+n_slides <- 5
+```
+
+How can we simplify this?
+
+```{r lotsa_models_bad, eval = FALSE}
+lm(mpg ~ cyl + disp + hp + drat, mtcars)
+lm(mpg ~ cyl + disp + hp + wt, mtcars)
+lm(mpg ~ cyl + disp + drat + wt, mtcars)
+lm(mpg ~ cyl + hp + drat + wt, mtcars)
+lm(mpg ~ disp + hp + drat + wt, mtcars)
+lm(disp ~ mpg + cyl + hp + drat, mtcars)
+lm(disp ~ mpg + cyl + hp + wt, mtcars)
+lm(disp ~ mpg + cyl + drat + wt, mtcars)
+lm(disp ~ mpg + hp + drat + wt, mtcars)
+lm(disp ~ cyl + hp + drat + wt, mtcars)
+lm(hp ~ mpg + cyl + disp + drat, mtcars)
+lm(hp ~ mpg + cyl + disp + wt, mtcars)
+lm(hp ~ mpg + cyl + drat + wt, mtcars)
+lm(hp ~ mpg + disp + drat + wt, mtcars)
+lm(hp ~ cyl + disp + drat + wt, mtcars)
+```
+
+Fitting lots of models (2/`r n_slides`)
+========================================================
+class: smaller
+
+### Problems:
+
+1. Create all necessary formulas for each of the multiple Ys.
+2. Fit `lm` based on each of the created formulas.
+
+### Input information:
+
+1. Vector of Y variables (`Ys`)
+2. Vector of possible X variables (`Xs`)
+3. Number of X variables to include in each model (`n_Xs`)
+
+```{r lotsa_models_info}
+Ys <- c("mpg", "disp", "hp")
+Xs <- c("mpg", "cyl", "disp", "hp", "drat", "wt")
+n_Xs <- 4
+```
+
+
+
+Fitting lots of models (3/`r n_slides`)
+========================================================
+class: smaller
+
+Make vector of all necessary formulas:
+
+```{r lotsa_models}
+make_forms <- function(y, Xs, n_Xs) {
+  poss_Xs <- Xs[Xs != y]
+  n_poss_Xs <- length(poss_Xs)
+  # All possible combinations:
+  combs <- combn(n_poss_Xs, n_Xs, simplify = FALSE)
+  # Change to names:
+  names_ <- lapply(combs, function(x) poss_Xs[x])
+  # Combine each set to single RHS of formula:
+  rhs <- sapply(names_, paste, collapse = " + ")
+  # Whole formulas as strings:
+  forms <- paste(y, "~", rhs)
+  return(forms)
+}
+```
+
+Fitting lots of models (4/`r n_slides`)
+========================================================
+
+Fit `lm()` based on a single formula string:
+
+```{r lotsa_models2}
+single_mod <- function(form_str) {
+  # Fit lm:
+  mod <- lm(as.formula(form_str), mtcars)
+  # Make model print prettier:
+  mod$call$formula <- as.formula(mod$terms)
+  return(mod)
+}
+```
+
+
+Fitting lots of models (5/`r n_slides`)
+========================================================
+class: smaller
+
+Put both steps together:
+
+```{r lotsa_models3}
+fit_models <- function(Ys, Xs, n_Xs) {
+  forms <- lapply(Ys, make_forms,
+                  Xs = Xs, n_Xs = n_Xs)
+  forms <- c(forms, recursive = TRUE)
+  lms <- lapply(forms, single_mod)
+  return(lms)
+}
+model_fits <- fit_models(Ys, Xs, n_Xs)
+model_fits[[1]]
 ```
 
 
@@ -151,7 +410,10 @@ summary(aov_wt)
 More information
 ========================================================
 
-* T Mailund (2017). *Functional Programming in R*. doi: 10.1007/978-1-4842-2746-6_1
+* T Mailund (2017). *Functional Programming in R*. [doi: 10.1007/978-1-4842-2746-6](
+  https://link.springer.com/book/10.1007%2F978-1-4842-2746-6)
   * Free through UW
-* [Functional Programming in R with purrr](
+* [Functional Programming in R with purrr (towardsdatascience.com)](
 https://towardsdatascience.com/functional-programming-in-r-with-purrr-469e597d0229)
+* [Functional Programming (in Advanced R)](
+  http://adv-r.had.co.nz/Functional-programming.html)
